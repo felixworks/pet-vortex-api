@@ -18,6 +18,9 @@ let access_token_3600 = "";
 const petfinder_client_id = process.env.PETFINDER_CLIENT_ID;
 const petfinder_client_secret = process.env.PETFINDER_CLIENT_SECRET;
 
+let animalType = "dog";
+let animalBreed = "affenpinscher";
+
 //TODO chain fetchAuth and fetchAnimals together
 const fetchAuth = async () => {
     // console.log(petfinder_client_id, petfinder_client_secret);
@@ -42,7 +45,7 @@ const fetchAuth = async () => {
         .then((json) => {
             // console.log(json);
             access_token_3600 = json.access_token;
-            console.log(access_token_3600);
+            // console.log(access_token_3600);
         });
 };
 //TODO decide which API query parameters to include here
@@ -55,30 +58,30 @@ const fetchAnimals = async (type, breed) => {
     };
 
     let status = "";
-    console.log(bearerString);
+    // console.log(bearerString);
 
-    await fetch(url, { method: "GET", headers: headers })
+    const animals = await fetch(url, { method: "GET", headers: headers })
         .then((res) => {
             return res.json();
         })
         .then((json) => {
-            console.log(json);
-            status = json.status;
+            // console.log(json);
+            return json;
         });
 
-    return status;
+    return animals;
 };
 
-app.get("/", (req, res) => {
-    fetchAuth();
-    fetchAnimals("dog", "affenpinscher").then((status) => {
-        console.log("status after fetchAnimals", status);
-        if (status === 401) {
-            fetchAuth();
-            fetchAnimals("dog", "Shepherd");
-        }
-    });
-    res.send("Hello, world!");
+const fetchAuthAnimalsWrapper = async () => {
+    await fetchAuth();
+    const animalList = await fetchAnimals(animalType, animalBreed);
+    return animalList;
+};
+
+app.get("/", async (req, res) => {
+    const animalList = await fetchAuthAnimalsWrapper();
+    console.log(animalList);
+    res.send(animalList);
 });
 
 app.use(function errorHandler(error, req, res, next) {
